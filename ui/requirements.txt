@@ -1,0 +1,7 @@
+nicegui
+plotly
+langchain
+pandas
+langchain_openai
+langserve[client]
+langchain-anthropic

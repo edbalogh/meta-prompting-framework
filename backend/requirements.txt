@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+psycopg
+psycopg-pool
+psycopg-binary
+langgraph
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-anthropic
+langgraph
+langserve[server]
+wikipedia
+wolframalpha
