@@ -10,7 +10,7 @@ app = FastAPI()
 # Mount all endpoint routers
 app.include_router(conversations.router)
 
-agent = build_agent(get_llm("openai", "gpt-4o"))
+agent = build_agent(get_llm("openai", "gpt-4o-mini"))
 
 # add langserve routes
 add_routes(
