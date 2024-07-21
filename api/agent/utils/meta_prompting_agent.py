@@ -1,7 +1,6 @@
 # Set up logging
 import operator
 import logging
-import os
 from typing import Annotated, Literal, TypedDict, Sequence
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, FunctionMessage
 from langchain_core.tools import BaseTool
@@ -10,7 +9,7 @@ from langchain_core.language_models import LanguageModelLike
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolExecutor
 from langgraph.checkpoint import MemorySaver
-from utils.prompt_loader import load_markdown_prompt
+from agent.utils.prompt_loader import load_markdown_prompt
 from langgraph.prebuilt.tool_executor import ToolInvocation
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

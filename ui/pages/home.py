@@ -45,11 +45,10 @@ def parse_response_fn(bot_message):
 @router.page('/')
 def page():
     ui.page_title('Acxiom Automapping POC')
-    agent = RemoteRunnable(f"{API_URL}/agents/helloworld")
+    agent = RemoteRunnable(f"{API_URL}/agents/meta-prompter")
 
     thread_id = ui.input(label="Thread Id", value="1")
-    with ui.card().classes('w-full'):
-        bot(agent, thread_id.value, parse_response_fn)
+    bot(agent, thread_id.value, parse_response_fn)
 
     page_layout()
 

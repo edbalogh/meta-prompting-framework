@@ -12,5 +12,6 @@ RUN chmod +x /usr/src/app/wait_for_service.sh
 # Install netcat and any other needed packages specified in requirements.txt
 RUN apt-get update && apt-get install -y netcat-openbsd && pip install --no-cache-dir -r requirements.txt
 
+
 # Command to execute the wait script before starting your application
-CMD ["/bin/bash", "-c", "./wait_for_service.sh api 3000 && python -m main" ]
+CMD ["/bin/bash", "-c", "./wait_for_service.sh api 3000 && python -m main"]

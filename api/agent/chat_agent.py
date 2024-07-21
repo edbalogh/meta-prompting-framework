@@ -4,7 +4,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain_community.tools.wolfram_alpha import WolframAlphaQueryRun
 from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
-from utils.meta_prompting_agent import create_meta_prompting_agent
+from agent.utils.meta_prompting_agent import create_meta_prompting_agent
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

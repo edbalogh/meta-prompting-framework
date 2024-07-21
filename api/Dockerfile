@@ -14,4 +14,4 @@ RUN apt-get update && apt-get install -y netcat-openbsd && pip install --no-cach
 
 
 # Command to execute the wait script before starting your application
-CMD ["/bin/bash", "-c", "./wait_for_service.sh db 5432 && python -m uvicorn main:app.api --host 0.0.0.0 --port 3000 --log-level debug --reload"]
+CMD ["/bin/bash", "-c", "./wait_for_service.sh db 5432 && python -m uvicorn main:app --host 0.0.0.0 --port 3000 --log-level debug --reload"]

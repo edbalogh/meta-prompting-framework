@@ -19,29 +19,28 @@ def bot(agent, thread_id, extract_fn):
             ).style(
                 add='align-self: flex-end',
             )
-            response_message = ui.chat_message(
-                name='Bot', sent=False, text_html=True).props(add='bg-color=grey-1')
+            response_message = ui.chat_message(name='Bot', sent=False, text_html=True).props(add='bg-color=grey-1')
 
             spinner = ui.spinner(type='dots')
             message_container.scroll_to(percent=100, duration=0)
 
             response = ''
             thread = {"configurable": {"thread_id": thread_id}, 'callbacks': [NiceGuiLogElementCallbackHandler(log)]}
-            payload = {"messages": [HumanMessage(content=question)]}
-            async for chunk in agent.astream(payload, thread, stream_mode="values"):
+            payload = {"messages": [HumanMessage(content=question)], "turn_count": 0}
 
+            async for chunk in agent.astream(payload, thread, stream_mode="values"):
                 node_response = next(iter(chunk.values()))
                 for bot_message in node_response['messages']:
                     response = extract_fn(bot_message)
-                    if response != "":
-                        with response_message:
-                            ui.markdown(response)
+                    print(f"response: {response}", flush=True)
+                    with response_message:
+                        ui.markdown(response)
 
                 message_container.scroll_to(percent=100, duration=0)
             message_container.remove(spinner)
 
     with ui.column().classes('col-span-6 justify-between h-full w-full'):
-        with ui.card().classes('w-full min-w-full h-full flex flex-stretch'):
+        with ui.card().classes('w-full h-[500px] flex flex-grow'):
             with ui.tabs().classes('w-full') as tabs:
                 chat_tab = ui.tab('Chat')
                 logs_tab = ui.tab('Logs')
