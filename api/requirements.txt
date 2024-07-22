@@ -1,8 +1,10 @@
 fastapi
 uvicorn
+psycopg2
 psycopg
 psycopg-pool
 psycopg-binary
+sqlalchemy
 langgraph
 langchain
 langchain-core
