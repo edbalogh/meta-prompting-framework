@@ -56,7 +56,7 @@ def create_meta_prompting_agent(
         )
         
         result = {
-            "messages": [AIMessage(content=f"Meta-Prompter: {response.content}")],
+            "messages": [AIMessage(content=f"EXPERT REQUEST: ```{response.content}```")],
             "turn_count": turn_count,
             "error_log": state.get("error_log", []),
         }
@@ -126,7 +126,7 @@ def create_meta_prompting_agent(
         elif state.get("turn_count", 0) >= MAX_TURNS:
             logger.info("Maximum turns reached, ending conversation")
             return "end"
-        elif last_message.startswith("Meta-Prompter:"):
+        elif last_message.startswith("EXPERT REQUEST:"):
             return "expert"
         else:
             return "continue"
