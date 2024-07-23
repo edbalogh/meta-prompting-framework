@@ -1,9 +1,48 @@
+from typing import Dict, List
+from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 from nicegui import ui
-import uuid, requests, os
+import uuid, requests, os, re
 from templates.chatbot.log_callback_handler import NiceGuiLogElementCallbackHandler
 from langchain_core.messages.human import HumanMessage
 
+
 API_URL = os.environ['API_URL']
+
+
+def determine_message_type(content: str, agent_name: str) -> str:
+    if agent_name.lower() == "summary agent" and "final answer:" in content.lower():
+        return "final_response"
+    elif any(keyword in agent_name.lower() for keyword in ["meta-expert", "meta-prompter", "planning"]):
+        return "planning"
+    else:
+        return "expert"
+
+def format_message(content: str) -> dict[str, str]:
+    content = content.replace('`', '')
+    agent_match = re.match(r'\[AGENT_NAME:\s*([^\]]+)\]', content)
+    agent_name = agent_match.group(1).strip() if agent_match else "Unknown Agent"
+    body = re.sub(r'\[AGENT_NAME:[^\]]+\]\s*', '', content).strip()
+    
+    message_type = determine_message_type(content, agent_name)
+    
+    return {
+        "type": message_type,
+        "agent_name": agent_name,
+        "content": body
+    }
+
+def formatting_node(state: Dict[str, List[BaseMessage]], config: Dict) -> Dict[str, List[Dict[str, str]]]:
+    formatted_messages = []
+    print(f"state={state}", flush=True)
+    if isinstance(state, AIMessage) or isinstance(state, FunctionMessage):
+        formatted_messages.append(format_message(state.content))
+    else:
+        for message in state["messages"]:
+            if isinstance(message, AIMessage):
+                formatted_messages.append(format_message(message.content))
+
+    return {"messages": formatted_messages}
+
 
 class ChatBot:
     def __init__(self, agent, extract_fn, thread_id = None):
@@ -76,7 +115,10 @@ class ChatBot:
             async for chunk in self.agent.astream(payload, thread, stream_mode="values"):
                 node_response = next(iter(chunk.values()))
                 for bot_message in node_response['messages']:
-                    response = self.extract_fn(bot_message)
+                    print(f"bot_message={bot_message}", flush=True)
+                    # Format the chunk
+                    formatted_chunk = formatting_node(bot_message, {})
+                    response = self.extract_fn(formatted_chunk)
                     print(f"response: {response}", flush=True)
                     with response_message:
                         ui.markdown(response)
