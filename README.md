@@ -1,1 +1,16 @@
 # meta-prompting-framework
+
+```
+export OPENAI_API_KEY=
+export LANGCHAIN_API_KEY=
+export LANGCHAIN_TRACING_V2=
+export LANGCHAIN_PROJECT=
+export LANGCHAIN_ENDPOINT=
+export ANTHROPIC_API_KEY=
+export API_URL=
+export POSTGRES_DB=
+export POSTGRES_USER=
+export POSTGRES_PASSWORD=
+export TAVILY_API_KEY=
+export WOLFRAM_ALPHA_APPID=
+```
