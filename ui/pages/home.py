@@ -5,14 +5,14 @@ from templates.page_layout import page_layout
 from templates.chatbot.chat import ChatBot
 from api.models.conversation import ConversationModel
 from sqlalchemy.orm import Session
-from sqlalchemy import select, desc
+from sqlalchemy import create_engine, select, desc
 from database import engine
 
 router = APIRouter()
 API_URL = os.environ['API_URL']
 DATABASE_URL = os.environ['DATABASE_URL']
 
-engine = create_engine(DATABASE_URL)
+# engine is now imported from database.py, so we can remove this line
 
 
 def load_conversations():
