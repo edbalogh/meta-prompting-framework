@@ -3,22 +3,23 @@ from nicegui import APIRouter, ui
 from langserve import RemoteRunnable
 from templates.page_layout import page_layout
 from templates.chatbot.chat import ChatBot
-from api.models.conversation import ConversationModel
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, select, desc
+from sqlalchemy import select, desc
 from database import engine
 
 router = APIRouter()
 API_URL = os.environ['API_URL']
-DATABASE_URL = os.environ['DATABASE_URL']
 
-# engine is now imported from database.py, so we can remove this line
+import httpx
 
-
-def load_conversations():
-    with Session(engine) as session:
-        conversations = session.query(ConversationModel).order_by(desc(ConversationModel.created_at)).limit(10).all()
-    return conversations
+async def load_conversations():
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{API_URL}/conversations")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error loading conversations: {response.status_code}")
+            return []
 
 def parse_response_fn(bot_message):
     bot_data_str = ""
@@ -50,13 +51,13 @@ def page():
         bot.thread_id = conversation.id
         bot.load_conversation(conversation.id)
 
-    def load_conversation_list():
-        conversations = load_conversations()
+    async def load_conversation_list():
+        conversations = await load_conversations()
         conversation_list.clear()
         with conversation_list:
             ui.button(icon='add', on_click=new_conversation).props('flat color=primary').classes('w-full')
             for conv in conversations:
-                ui.button(conv.name or f"Conversation {conv.id}", on_click=lambda c=conv: load_conversation(c)).props('flat color=primary').classes('w-full')
+                ui.button(conv.get('name') or f"Conversation {conv.get('id')}", on_click=lambda c=conv: load_conversation(c)).props('flat color=primary').classes('w-full')
 
     ui.input(label="Thread Id").bind_value(bot, "thread_id")
     bot.create_ui()
