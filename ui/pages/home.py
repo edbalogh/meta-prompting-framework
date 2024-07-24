@@ -52,18 +52,17 @@ async def page():
     
     async def load_conversation_list():
         conversations = await load_conversations()
-        print(f"conversations: {conversations}")
         conversation_list.clear()
         with conversation_list:
             for conv in conversations:
-                with ui.row().classes('w-full items-center border-b border-gray-200 py-2'):
-                    with ui.row().classes('w-3/4'):
+                with ui.row().classes('w-full items-center border-b border-gray-200 py-0'):
+                    with ui.row().classes('w-[80%]'):
                         ui.button(conv.get('name').replace('"', '') or f"Conversation {conv.get('thread_id')}", 
                                   on_click=lambda c=conv: asyncio.create_task(load_conversation(c))
-                                 ).props('flat color=primary text-wrap').classes('w-full text-left text-sm')
-                    with ui.row().classes('w-1/4 justify-center'):
+                                 ).props('flat color=primary text-wrap no-caps dense size=sm').classes('w-full text-left')
+                    with ui.row().classes('justify-center'):
                         ui.button(icon='delete', on_click=lambda c=conv: asyncio.create_task(delete_and_reload(c['thread_id']))
-                                 ).props('flat color=red dense')
+                                 ).props('flat color=red dense size=sm')
             ui.button('new conversation', icon='create', on_click=lambda: asyncio.create_task(new_conversation())).props('color=primary').classes('w-full text-xs mt-2')
 
     async def delete_and_reload(thread_id: str):
@@ -84,7 +83,7 @@ async def page():
         bot.thread_id = conversation['thread_id']
         bot.load_conversation(conversation['thread_id'])
 
-    ui.input(label="Thread Id").bind_value(bot, "thread_id")
+    ui.input(label="Thread Id").bind_value(bot, "thread_id").classes('hidden')
     bot.create_ui()
 
     page_layout()
