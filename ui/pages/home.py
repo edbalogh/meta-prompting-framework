@@ -3,10 +3,21 @@ from nicegui import APIRouter, ui
 from langserve import RemoteRunnable
 from templates.page_layout import page_layout
 from templates.chatbot.chat import ChatBot
+from api.endpoints.conversations import ConversationModel
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, desc
 
 router = APIRouter()
 API_URL = os.environ['API_URL']
+DATABASE_URL = os.environ['DATABASE_URL']
 
+engine = create_engine(DATABASE_URL)
+
+
+def load_conversations():
+    with Session(engine) as session:
+        conversations = session.query(ConversationModel).order_by(desc(ConversationModel.created_at)).limit(10).all()
+    return conversations
 
 def parse_response_fn(bot_message):
     bot_data_str = ""
@@ -24,16 +35,28 @@ def parse_response_fn(bot_message):
 
 @router.page('/')
 def page():
-    
-    def new_conversation():
-        print("starting new chat")
-        bot.reset_thread()
-
     ui.page_title('Acxiom Automapping POC')
     
     agent = RemoteRunnable(f"{API_URL}/agents/meta-prompter")
     bot = ChatBot(agent, parse_response_fn)
     
+    def new_conversation():
+        print("starting new chat")
+        bot.reset_thread()
+        load_conversation_list()
+
+    def load_conversation(conversation):
+        bot.thread_id = conversation.id
+        bot.load_conversation(conversation.id)
+
+    def load_conversation_list():
+        conversations = load_conversations()
+        conversation_list.clear()
+        with conversation_list:
+            ui.button(icon='add', on_click=new_conversation).props('flat color=primary').classes('w-full')
+            for conv in conversations:
+                ui.button(conv.name or f"Conversation {conv.id}", on_click=lambda c=conv: load_conversation(c)).props('flat color=primary').classes('w-full')
+
     ui.input(label="Thread Id").bind_value(bot, "thread_id")
     bot.create_ui()
 
@@ -41,6 +64,5 @@ def page():
 
     with ui.right_drawer(elevated=False, bordered=True).classes('bg-white pl-4 space-y-1') as right_drawer:
         ui.markdown('##### __Conversations__').classes('w-full text-center')
-        with ui.list().classes('w-full') as latest_chats:
-            with ui.item():
-                ui.button(icon='add', on_click=new_conversation)
+        conversation_list = ui.column().classes('w-full')
+        load_conversation_list()
