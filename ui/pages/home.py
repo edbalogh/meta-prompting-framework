@@ -55,15 +55,16 @@ async def page():
         print(f"conversations: {conversations}")
         conversation_list.clear()
         with conversation_list:
-            
             for conv in conversations:
-                with ui.row().classes('w-full'):
-                    ui.button(conv.get('name').replace('"', '') or f"Conversation {conv.get('thread_id')}", 
-                              on_click=lambda c=conv: asyncio.create_task(load_conversation(c))
-                             ).props('flat color=primary').classes('flex-grow text-xs')
-                    ui.button(icon='delete', on_click=lambda c=conv: asyncio.create_task(delete_and_reload(c['thread_id']))
-                             ).props('flat color=red dense').classes('ml-auto')
-            ui.button('new conversation', icon='create', on_click=lambda: asyncio.create_task(new_conversation())).props('color=primary').classes('w-full text-xs')
+                with ui.row().classes('w-full items-center border-b border-gray-200 py-2'):
+                    with ui.row().classes('w-3/4'):
+                        ui.button(conv.get('name').replace('"', '') or f"Conversation {conv.get('thread_id')}", 
+                                  on_click=lambda c=conv: asyncio.create_task(load_conversation(c))
+                                 ).props('flat color=primary text-wrap').classes('w-full text-left text-sm')
+                    with ui.row().classes('w-1/4 justify-center'):
+                        ui.button(icon='delete', on_click=lambda c=conv: asyncio.create_task(delete_and_reload(c['thread_id']))
+                                 ).props('flat color=red dense')
+            ui.button('new conversation', icon='create', on_click=lambda: asyncio.create_task(new_conversation())).props('color=primary').classes('w-full text-xs mt-2')
 
     async def delete_and_reload(thread_id: str):
         success = await delete_conversation(thread_id)
