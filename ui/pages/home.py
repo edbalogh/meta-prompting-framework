@@ -10,11 +10,13 @@ API_URL = os.environ['API_URL']
 
 async def load_conversations():
     async with httpx.AsyncClient() as client:
-        response = await client.get(f"{API_URL}/conversations")
+        response = await client.get(f"{API_URL}/api/conversations")
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            print(f"data returned: {data}", flush=True)
+            return data
         else:
-            print(f"Error loading conversations: {response.status_code}")
+            print(f"Error loading conversations: {response.status_code}", flush=True)
             return []
 
 def parse_response_fn(bot_message):
@@ -49,6 +51,7 @@ def page():
 
     async def load_conversation_list():
         conversations = await load_conversations()
+        print(f"conversations: {conversations}")
         conversation_list.clear()
         with conversation_list:
             ui.button(icon='add', on_click=new_conversation).props('flat color=primary').classes('w-full')
