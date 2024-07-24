@@ -9,7 +9,7 @@ import asyncio
 router = APIRouter()
 API_URL = os.environ['API_URL']
 
-async def load_conversations():
+async def load_conversations(active_thread_id=None):
     async with aiohttp.ClientSession() as session:
         print(f"GET on {API_URL}api/conversations", flush=True)
         async with session.get(f"{API_URL}api/conversations") as response:
@@ -51,15 +51,16 @@ async def page():
     ui.page_title('Acxiom Automapping POC')
     
     async def load_conversation_list():
-        conversations = await load_conversations()
+        conversations = await load_conversations(bot.thread_id)
         conversation_list.clear()
         with conversation_list:
             for conv in conversations:
-                with ui.row().classes('w-full items-center border-b border-gray-200 py-0'):
+                is_active = conv['thread_id'] == bot.thread_id
+                with ui.row().classes('w-full items-center py-1'):
                     with ui.row().classes('w-[80%]'):
                         ui.button(conv.get('name').replace('"', '') or f"Conversation {conv.get('thread_id')}", 
                                   on_click=lambda c=conv: asyncio.create_task(load_conversation(c))
-                                 ).props('flat color=primary text-wrap no-caps dense size=sm').classes('w-full text-left')
+                                 ).props('flat color=primary text-wrap no-caps dense size=sm').classes(f'w-full text-left {"bg-blue-100" if is_active else ""}')
                     with ui.row().classes('justify-center'):
                         ui.button(icon='delete', on_click=lambda c=conv: asyncio.create_task(delete_and_reload(c['thread_id']))
                                  ).props('flat color=red dense size=sm')
