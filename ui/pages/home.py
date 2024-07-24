@@ -39,6 +39,15 @@ def parse_response_fn(bot_message):
 async def page():
     ui.page_title('Acxiom Automapping POC')
     
+    async def load_conversation_list():
+        conversations = await load_conversations()
+        print(f"conversations: {conversations}")
+        conversation_list.clear()
+        with conversation_list:
+            ui.button(icon='add', on_click=lambda: asyncio.create_task(new_conversation())).props('flat color=primary').classes('w-full')
+            for conv in conversations:
+                ui.button(conv.get('name') or f"Conversation {conv.get('thread_id')}", on_click=lambda c=conv: asyncio.create_task(load_conversation(c))).props('flat color=primary').classes('w-full')
+
     agent = RemoteRunnable(f"{API_URL}/agents/meta-prompter")
     bot = ChatBot(agent, parse_response_fn, on_new_conversation=load_conversation_list)
     
@@ -49,15 +58,6 @@ async def page():
     async def load_conversation(conversation):
         bot.thread_id = conversation['thread_id']
         bot.load_conversation(conversation['thread_id'])
-
-    async def load_conversation_list():
-        conversations = await load_conversations()
-        print(f"conversations: {conversations}")
-        conversation_list.clear()
-        with conversation_list:
-            ui.button(icon='add', on_click=lambda: asyncio.create_task(new_conversation())).props('flat color=primary').classes('w-full')
-            for conv in conversations:
-                ui.button(conv.get('name') or f"Conversation {conv.get('thread_id')}", on_click=lambda c=conv: asyncio.create_task(load_conversation(c))).props('flat color=primary').classes('w-full')
 
     ui.input(label="Thread Id").bind_value(bot, "thread_id")
     bot.create_ui()
