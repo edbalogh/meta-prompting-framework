@@ -40,12 +40,11 @@ async def page():
     ui.page_title('Acxiom Automapping POC')
     
     agent = RemoteRunnable(f"{API_URL}/agents/meta-prompter")
-    bot = ChatBot(agent, parse_response_fn)
+    bot = ChatBot(agent, parse_response_fn, on_new_conversation=load_conversation_list)
     
     async def new_conversation():
         print("starting new chat")
         bot.reset_thread()
-        await load_conversation_list()
 
     async def load_conversation(conversation):
         bot.thread_id = conversation['thread_id']
