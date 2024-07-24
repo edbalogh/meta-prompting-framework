@@ -2,6 +2,9 @@ from typing import Dict, List
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 from nicegui import ui
 import uuid, requests, os, re
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain_openai import OpenAI
 from templates.chatbot.log_callback_handler import NiceGuiLogElementCallbackHandler
 from langchain_core.messages.human import HumanMessage
 
@@ -45,13 +48,14 @@ def formatting_node(state: Dict[str, List[BaseMessage]], config: Dict) -> Dict[s
 
 
 class ChatBot:
-    def __init__(self, agent, extract_fn, thread_id = None):
+    def __init__(self, agent, extract_fn, thread_id=None, on_new_conversation=None):
         self.agent = agent
         self.thread_id = thread_id
         self.extract_fn = extract_fn
         self.message_container = None
         self.text = None
         self.log = None
+        self.on_new_conversation = on_new_conversation
 
     def clear(self) -> None:
         self.message_container.clear()
@@ -73,6 +77,15 @@ class ChatBot:
             print(f"Failed to fetch conversations: {e}")
             self.conversations = []
 
+    def generate_conversation_name(self, question: str) -> str:
+        llm = OpenAI(temperature=0.7)
+        prompt = PromptTemplate(
+            input_variables=["question"],
+            template="Generate a very short (max 5 words) name for a conversation that starts with this question: {question}"
+        )
+        name_chain = LLMChain(llm=llm, prompt=prompt)
+        return name_chain.run(question).strip()
+
     def save_conversation(self, name: str) -> None:
         conversation_data = {
             "thread_id": self.thread_id,
@@ -87,12 +100,13 @@ class ChatBot:
 
 
     async def send(self) -> None:
+        question = self.text.value
         if not self.thread_id:
             self.thread_id = str(uuid.uuid4())
-            name = self.thread_id  # TODO give name based on question
+            name = self.generate_conversation_name(question)
             self.save_conversation(name)
-            
-        question = self.text.value
+            if self.on_new_conversation:
+                await self.on_new_conversation()
         self.text.value = ''
 
         with self.message_container:
