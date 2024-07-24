@@ -48,8 +48,8 @@ async def page():
         await load_conversation_list()
 
     async def load_conversation(conversation):
-        bot.thread_id = conversation['id']
-        bot.load_conversation(conversation['id'])
+        bot.thread_id = conversation['thread_id']
+        bot.load_conversation(conversation['thread_id'])
 
     async def load_conversation_list():
         conversations = await load_conversations()
@@ -58,7 +58,7 @@ async def page():
         with conversation_list:
             ui.button(icon='add', on_click=lambda: asyncio.create_task(new_conversation())).props('flat color=primary').classes('w-full')
             for conv in conversations:
-                ui.button(conv.get('name') or f"Conversation {conv.get('id')}", on_click=lambda c=conv: asyncio.create_task(load_conversation(c))).props('flat color=primary').classes('w-full')
+                ui.button(conv.get('name') or f"Conversation {conv.get('thread_id')}", on_click=lambda c=conv: asyncio.create_task(load_conversation(c))).props('flat color=primary').classes('w-full')
 
     ui.input(label="Thread Id").bind_value(bot, "thread_id")
     bot.create_ui()
