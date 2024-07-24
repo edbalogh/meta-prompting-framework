@@ -16,6 +16,8 @@ async def load_conversations(active_thread_id=None):
             if response.status == 200:
                 data = await response.json()
                 print(f"data returned: {data}", flush=True)
+                if active_thread_id:
+                    data.sort(key=lambda x: x['thread_id'] != active_thread_id)
                 return data
             else:
                 print(f"Error loading conversations: {response.status} - {await response.text()}", flush=True)
