@@ -3,9 +3,10 @@ from nicegui import APIRouter, ui
 from langserve import RemoteRunnable
 from templates.page_layout import page_layout
 from templates.chatbot.chat import ChatBot
-from api.endpoints.conversations import ConversationModel
+from api.models.conversation import ConversationModel
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, desc
+from sqlalchemy import select, desc
+from database import engine
 
 router = APIRouter()
 API_URL = os.environ['API_URL']
