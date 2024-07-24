@@ -4,6 +4,7 @@ from nicegui import APIRouter, ui
 from langserve import RemoteRunnable
 from templates.page_layout import page_layout
 from templates.chatbot.chat import ChatBot
+import asyncio
 
 router = APIRouter()
 API_URL = os.environ['API_URL']
@@ -34,29 +35,29 @@ def parse_response_fn(bot_message):
     return bot_data_str
 
 @router.page('/')
-def page():
+async def page():
     ui.page_title('Acxiom Automapping POC')
     
     agent = RemoteRunnable(f"{API_URL}/agents/meta-prompter")
     bot = ChatBot(agent, parse_response_fn)
     
-    def new_conversation():
+    async def new_conversation():
         print("starting new chat")
         bot.reset_thread()
-        load_conversation_list()
+        await load_conversation_list()
 
-    def load_conversation(conversation):
-        bot.thread_id = conversation.id
-        bot.load_conversation(conversation.id)
+    async def load_conversation(conversation):
+        bot.thread_id = conversation['id']
+        bot.load_conversation(conversation['id'])
 
     async def load_conversation_list():
         conversations = await load_conversations()
         print(f"conversations: {conversations}")
         conversation_list.clear()
         with conversation_list:
-            ui.button(icon='add', on_click=new_conversation).props('flat color=primary').classes('w-full')
+            ui.button(icon='add', on_click=lambda: asyncio.create_task(new_conversation())).props('flat color=primary').classes('w-full')
             for conv in conversations:
-                ui.button(conv.get('name') or f"Conversation {conv.get('id')}", on_click=lambda c=conv: load_conversation(c)).props('flat color=primary').classes('w-full')
+                ui.button(conv.get('name') or f"Conversation {conv.get('id')}", on_click=lambda c=conv: asyncio.create_task(load_conversation(c))).props('flat color=primary').classes('w-full')
 
     ui.input(label="Thread Id").bind_value(bot, "thread_id")
     bot.create_ui()
@@ -66,4 +67,4 @@ def page():
     with ui.right_drawer(elevated=False, bordered=True).classes('bg-white pl-4 space-y-1') as right_drawer:
         ui.markdown('##### __Conversations__').classes('w-full text-center')
         conversation_list = ui.column().classes('w-full')
-        load_conversation_list()
+        await load_conversation_list()
