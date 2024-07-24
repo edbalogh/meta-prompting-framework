@@ -64,6 +64,11 @@ class ChatBot:
         self.thread_id = thread_id
         self.message_container.clear()
 
+    def load_conversation(self, thread_id) -> None:
+        self.thread_id = thread_id
+        self.message_container.clear()
+        # Here you can add logic to load the conversation history if needed
+
     def reset_thread(self) -> None:
         self.thread_id = None
         self.message_container.clear()

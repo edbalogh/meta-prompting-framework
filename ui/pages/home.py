@@ -83,7 +83,6 @@ async def page():
         bot.reset_thread()
 
     async def load_conversation(conversation):
-        bot.thread_id = conversation['thread_id']
         bot.load_conversation(conversation['thread_id'])
 
     ui.input(label="Thread Id").bind_value(bot, "thread_id").classes('hidden')
