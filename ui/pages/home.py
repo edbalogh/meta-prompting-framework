@@ -10,7 +10,7 @@ router = APIRouter()
 API_URL = os.environ['API_URL']
 
 async def load_conversations():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         print(f"GET on {API_URL}api/conversations", flush=True)
         response = await client.get(f"{API_URL}api/conversations")
         if response.status_code == 200:
@@ -18,7 +18,7 @@ async def load_conversations():
             print(f"data returned: {data}", flush=True)
             return data
         else:
-            print(f"Error loading conversations: {response}", flush=True)
+            print(f"Error loading conversations: {response.status_code} - {response.text}", flush=True)
             return []
 
 def parse_response_fn(bot_message):
