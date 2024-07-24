@@ -60,9 +60,9 @@ async def page():
                 with ui.row().classes('w-full'):
                     ui.button(conv.get('name') or f"Conversation {conv.get('thread_id')}", 
                               on_click=lambda c=conv: asyncio.create_task(load_conversation(c))
-                             ).props('flat color=primary').classes('flex-grow')
+                             ).props('flat color=primary').classes('flex-grow text-sm')
                     ui.button(icon='delete', on_click=lambda c=conv: asyncio.create_task(delete_and_reload(c['thread_id']))
-                             ).props('flat color=red').classes('ml-2')
+                             ).props('flat color=red dense').classes('ml-auto')
 
     async def delete_and_reload(thread_id: str):
         success = await delete_conversation(thread_id)
