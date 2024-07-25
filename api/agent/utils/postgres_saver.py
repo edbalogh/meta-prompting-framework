@@ -543,7 +543,7 @@ class PostgresSaver(BaseCheckpointSaver):
         where_clause = "WHERE " + " AND ".join(wheres) if wheres else ""
         return where_clause, param_values
     
-    async def get_or_create_run(self, run_id: str):
+    async def get_or_create_run(self, run_id: str, **kwargs):
         async with self._get_async_connection() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
@@ -557,18 +557,28 @@ class PostgresSaver(BaseCheckpointSaver):
                         (run_id, 'started', self.serde.dumps({"time": time.time()}))
                     )
                     run = await cursor.fetchone()
-        return run
+        return {"id": run[0], "status": run[1], "start_time": self.serde.loads(run[2])}
 
-    async def update_run(self, run_id: str, status: str, end_time: float):
-        async with self._get_async_connection() as conn:
-            async with conn.cursor() as cursor:
-                await cursor.execute(
-                    "UPDATE runs SET status = %s, end_time = %s WHERE run_id = %s",
-                    (status, self.serde.dumps({"time": end_time}), run_id)
-                )
+    async def update_run(self, run_id: str, *, status: Optional[str] = None, end_time: Optional[float] = None, **kwargs):
+        update_fields = []
+        update_values = []
+        if status is not None:
+            update_fields.append("status = %s")
+            update_values.append(status)
+        if end_time is not None:
+            update_fields.append("end_time = %s")
+            update_values.append(self.serde.dumps({"time": end_time}))
+        
+        if update_fields:
+            async with self._get_async_connection() as conn:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(
+                        f"UPDATE runs SET {', '.join(update_fields)} WHERE run_id = %s",
+                        (*update_values, run_id)
+                    )
 
     async def create_step(self, run_id: str, step_id: str, start_time: float, end_time: float, 
-                          inputs: dict, outputs: dict, step_type: str):
+                          inputs: dict, outputs: dict, step_type: str, **kwargs):
         async with self._get_async_connection() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
@@ -580,3 +590,4 @@ class PostgresSaver(BaseCheckpointSaver):
                      self.serde.dumps({"time": end_time}), self.serde.dumps(inputs), 
                      self.serde.dumps(outputs), step_type)
                 )
+        return {"id": step_id}

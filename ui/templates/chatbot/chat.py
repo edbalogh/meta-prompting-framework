@@ -125,10 +125,11 @@ class ChatBot:
             self.message_container.scroll_to(percent=100, duration=0)
 
             response = ''
-            thread = {"configurable": {"thread_id": self.thread_id}, 'callbacks': [NiceGuiLogElementCallbackHandler(self.log)]}
+            config = {"configurable": {"thread_id": self.thread_id}}
             payload = {"messages": [HumanMessage(content=question)], "turn_count": 0}
+            callbacks = [NiceGuiLogElementCallbackHandler(self.log)]
 
-            async for chunk in self.agent.astream(payload, thread, stream_mode="values"):
+            async for chunk in self.agent.astream(payload, config=config, callbacks=callbacks, stream_mode="values"):
                 node_response = next(iter(chunk.values()))
                 for bot_message in node_response['messages']:
                     # Format the chunk
