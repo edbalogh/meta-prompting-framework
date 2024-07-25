@@ -115,13 +115,10 @@ class ChatBot:
         self.text.value = ''
 
         with self.message_container:
-            ui.chat_message(
-                text=question, name='You', sent=True
-            ).props(
-                add='bg-color=blue-1 float=right',
-            ).style(
-                add='align-self: flex-end',
-            )
+            ui.chat_message(text=question, name='You', sent=True) \
+                .props(add='bg-color=blue-1 float=right') \
+                .style(add='align-self: flex-end')
+            
             response_message = ui.chat_message(name='Bot', sent=False, text_html=True).props(add='bg-color=grey-1')
 
             spinner = ui.spinner(type='dots')
@@ -134,11 +131,9 @@ class ChatBot:
             async for chunk in self.agent.astream(payload, thread, stream_mode="values"):
                 node_response = next(iter(chunk.values()))
                 for bot_message in node_response['messages']:
-                    print(f"bot_message={bot_message}", flush=True)
                     # Format the chunk
                     formatted_chunk = formatting_node(bot_message, {})
                     response = self.extract_fn(formatted_chunk)
-                    print(f"response: {response}", flush=True)
                     with response_message:
                         ui.markdown(response)
 
