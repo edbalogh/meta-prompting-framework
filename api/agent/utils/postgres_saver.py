@@ -691,6 +691,12 @@ class PostgresSaver(BaseCheckpointSaver):
                     ('completed', self.serde.dumps({"time": time.time()}), self.serde.dumps(outputs), run_id)
                 )
 
+    async def on_llm_end(self, run_id: str, response: Any):
+        # This method was added in langgraph 0.1.7
+        # Implement the logic to handle the end of an LLM run
+        await self.update_run(run_id, status="completed", end_time=time.time())
+        # You might want to store the response as well, depending on your needs
+
     async def complete_run(self, run_id: str, outputs: dict):
         async with self._get_async_connection() as conn:
             async with conn.cursor() as cursor:
