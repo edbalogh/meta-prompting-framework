@@ -1,7 +1,7 @@
 from typing import Dict, List
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 from nicegui import ui
-import uuid, requests, os, re
+import uuid, requests, os, re, httpx
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI
@@ -142,11 +142,16 @@ class ChatBot:
                             ui.markdown(response)
 
                     self.message_container.scroll_to(percent=100, duration=0)
-            except Exception as e:
-                error_message = f"An error occurred: {str(e)}"
+            except httpx.HTTPStatusError as http_err:
+                error_message = f"HTTP error occurred: {http_err}"
                 print(f"Error in send method: {error_message}", flush=True)
                 with response_message:
-                    ui.markdown(f"**Error:** {error_message}")
+                    ui.markdown(f"**Error:** An issue occurred while processing your request. Please try again later.")
+            except Exception as e:
+                error_message = f"An unexpected error occurred: {str(e)}"
+                print(f"Error in send method: {error_message}", flush=True)
+                with response_message:
+                    ui.markdown(f"**Error:** An unexpected error occurred. Please try again or contact support if the issue persists.")
             finally:
                 self.message_container.remove(spinner)
 
