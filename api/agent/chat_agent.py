@@ -58,4 +58,4 @@ async def build_agent(model):
     except ImportError:
         logger.warning("Wikipedia package not found. Proceeding without Wikipedia tool.")
 
-    return create_meta_prompting_agent(model, tools)
+    return await create_meta_prompting_agent(model, tools)
