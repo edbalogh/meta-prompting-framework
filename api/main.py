@@ -13,7 +13,12 @@ app.include_router(conversations.router)
 async def setup_agent():
     return await build_agent(get_llm("openai", "gpt-4o-mini"))
 
-agent = asyncio.run(setup_agent())
+async def initialize():
+    global agent
+    agent = await setup_agent()
+
+# Run the initialization in an async context
+asyncio.run(initialize())
 
 # add langserve routes
 add_routes(
