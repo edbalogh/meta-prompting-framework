@@ -1,12 +1,13 @@
 from typing import Dict, List
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 from nicegui import ui
-import uuid, requests, os, re, httpx
+import uuid, requests, os, re, httpx, asyncio
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI
 from templates.chatbot.log_callback_handler import NiceGuiLogElementCallbackHandler
 from langchain_core.messages.human import HumanMessage
+from langchain.callbacks.tracers import LangChainTracer
 
 
 API_URL = os.environ['API_URL']
@@ -131,7 +132,10 @@ class ChatBot:
             run_id = str(uuid.uuid4())  # Generate a unique run_id
 
             try:
-                async for chunk in self.agent.astream(payload, config=config, stream_mode="values"):
+                tracer = LangChainTracer()
+                tracer.new_run(run_id)
+
+                async for chunk in self.agent.astream(payload, config=config, stream_mode="values", callbacks=[tracer]):
                     log_handler.on_llm_new_token(token=chunk, run_id=run_id)
                     node_response = next(iter(chunk.values()))
                     for bot_message in node_response['messages']:
@@ -142,11 +146,19 @@ class ChatBot:
                             ui.markdown(response)
 
                     self.message_container.scroll_to(percent=100, duration=0)
+                    
+                    # Allow other tasks to run
+                    await asyncio.sleep(0)
+
             except httpx.HTTPStatusError as http_err:
                 error_message = f"HTTP error occurred: {http_err}"
                 print(f"Error in send method: {error_message}", flush=True)
                 with response_message:
                     ui.markdown(f"**Error:** An issue occurred while processing your request. Please try again later.")
+            except asyncio.CancelledError:
+                print("Operation was cancelled", flush=True)
+                with response_message:
+                    ui.markdown("**Info:** The operation was cancelled.")
             except Exception as e:
                 error_message = f"An unexpected error occurred: {str(e)}"
                 print(f"Error in send method: {error_message}", flush=True)
@@ -154,6 +166,8 @@ class ChatBot:
                     ui.markdown(f"**Error:** An unexpected error occurred. Please try again or contact support if the issue persists.")
             finally:
                 self.message_container.remove(spinner)
+                if 'tracer' in locals():
+                    tracer.end_run(run_id)
 
     def create_ui(self):
         with ui.column().classes('col-span-6 justify-between h-full w-full'):
