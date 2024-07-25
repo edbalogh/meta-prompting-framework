@@ -5,12 +5,28 @@ from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain_community.tools.wolfram_alpha import WolframAlphaQueryRun
 from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 from agent.utils.meta_prompting_agent import create_meta_prompting_agent
+from psycopg_pool import AsyncConnectionPool
+from agent.utils.postgres_saver import PostgresSaver
 
+DB_NAME=os.environ['POSTGRES_DB']
+DB_USER=os.environ['POSTGRES_USER']
+DB_PWD=os.environ['POSTGRES_PASSWORD']
+
+DB_URI = f"postgresql://{DB_USER}:{DB_PWD}@db/{DB_NAME}"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def build_agent(model):
+async def build_agent(model):
+    
+    pool = AsyncConnectionPool(
+        # Example configuration
+        conninfo=DB_URI,
+        max_size=20,
+    )
+
+    checkpointer = PostgresSaver(async_connection=pool)
+    await checkpointer.acreate_tables(pool)
 
     # Create instances of the tools
     tools = [
