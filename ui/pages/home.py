@@ -51,6 +51,7 @@ def parse_response_fn(bot_message):
 async def page():
     ui.page_title('Acxiom Automapping POC')
     
+    @ui.refreshable_method
     async def load_conversation_list():
         conversations = await load_conversations(bot.thread_id)
         conversation_list.clear()
@@ -60,12 +61,12 @@ async def page():
                 with ui.row().classes('w-full items-center py-1'):
                     with ui.row().classes('w-[80%]'):
                         ui.button(conv.get('name').replace('"', '') or f"Conversation {conv.get('thread_id')}", 
-                                  on_click=lambda c=conv: asyncio.create_task(load_conversation(c))
+                                  on_click=lambda c=conv: load_conversation(c)
                                  ).props('flat color=primary text-wrap no-caps dense size=sm').classes(f'w-full text-left {"bg-blue-100" if is_active else ""}')
                     with ui.row().classes('justify-center'):
-                        ui.button(icon='delete', on_click=lambda c=conv: asyncio.create_task(delete_and_reload(c['thread_id']))
+                        ui.button(icon='delete', on_click=lambda c=conv: delete_and_reload(c['thread_id'])
                                  ).props('flat color=red dense size=sm')
-            ui.button('new conversation', icon='create', on_click=lambda: asyncio.create_task(new_conversation())).props('color=primary').classes('w-full text-xs mt-2')
+            ui.button('new conversation', icon='create', on_click=lambda: new_conversation()).props('color=primary').classes('w-full text-xs mt-2')
 
     async def delete_and_reload(thread_id: str):
         success = await delete_conversation(thread_id)
@@ -83,6 +84,7 @@ async def page():
 
     async def load_conversation(conversation):
         bot.load_conversation(conversation['thread_id'])
+        await load_conversation_list()
 
     ui.input(label="Thread Id").bind_value(bot, "thread_id").classes('hidden')
     bot.create_ui()
