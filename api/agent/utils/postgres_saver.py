@@ -643,3 +643,41 @@ class PostgresSaver(BaseCheckpointSaver):
                     }
                     for step in steps
                 ]
+
+    async def get_latest_run(self):
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT * FROM runs ORDER BY start_time DESC LIMIT 1"
+                )
+                run = await cursor.fetchone()
+                if run:
+                    return {
+                        "id": run[0],
+                        "status": run[1],
+                        "start_time": self.serde.loads(run[2]) if run[2] else None,
+                        "end_time": self.serde.loads(run[3]) if run[3] else None
+                    }
+                return None
+
+    async def get_run_steps(self, run_id: str):
+        return await self.get_steps(run_id)
+
+    async def get_run_step(self, run_id: str, step_id: str):
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT * FROM steps WHERE run_id = %s AND step_id = %s",
+                    (run_id, step_id)
+                )
+                step = await cursor.fetchone()
+                if step:
+                    return {
+                        "id": step[1],
+                        "start_time": self.serde.loads(step[2])["time"] if step[2] else None,
+                        "end_time": self.serde.loads(step[3])["time"] if step[3] else None,
+                        "inputs": self.serde.loads(step[4]) if step[4] else None,
+                        "outputs": self.serde.loads(step[5]) if step[5] else None,
+                        "step_type": step[6]
+                    }
+                return None
