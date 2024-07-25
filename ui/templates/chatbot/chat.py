@@ -130,18 +130,25 @@ class ChatBot:
             log_handler = NiceGuiLogElementCallbackHandler(self.log)
             run_id = str(uuid.uuid4())  # Generate a unique run_id
 
-            async for chunk in self.agent.astream(payload, config=config, stream_mode="values"):
-                log_handler.on_llm_new_token(token=chunk, run_id=run_id)
-                node_response = next(iter(chunk.values()))
-                for bot_message in node_response['messages']:
-                    # Format the chunk
-                    formatted_chunk = formatting_node(bot_message, {})
-                    response = self.extract_fn(formatted_chunk)
-                    with response_message:
-                        ui.markdown(response)
+            try:
+                async for chunk in self.agent.astream(payload, config=config, stream_mode="values"):
+                    log_handler.on_llm_new_token(token=chunk, run_id=run_id)
+                    node_response = next(iter(chunk.values()))
+                    for bot_message in node_response['messages']:
+                        # Format the chunk
+                        formatted_chunk = formatting_node(bot_message, {})
+                        response = self.extract_fn(formatted_chunk)
+                        with response_message:
+                            ui.markdown(response)
 
-                self.message_container.scroll_to(percent=100, duration=0)
-            self.message_container.remove(spinner)
+                    self.message_container.scroll_to(percent=100, duration=0)
+            except Exception as e:
+                error_message = f"An error occurred: {str(e)}"
+                print(f"Error in send method: {error_message}", flush=True)
+                with response_message:
+                    ui.markdown(f"**Error:** {error_message}")
+            finally:
+                self.message_container.remove(spinner)
 
     def create_ui(self):
         with ui.column().classes('col-span-6 justify-between h-full w-full'):
