@@ -12,6 +12,7 @@ langchain-community
 langchain-openai
 langchain-anthropic
 langgraph
+langchain-postgres
 langserve[server]
 wikipedia
 wolframalpha

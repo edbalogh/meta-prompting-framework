@@ -33,8 +33,6 @@ services:
     depends_on:
       - db
       - api
-    environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
 
 volumes:
   postgres_data:

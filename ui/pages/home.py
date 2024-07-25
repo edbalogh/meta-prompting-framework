@@ -15,7 +15,6 @@ async def load_conversations(active_thread_id=None):
         async with session.get(f"{API_URL}api/conversations") as response:
             if response.status == 200:
                 data = await response.json()
-                print(f"data returned: {data}", flush=True)
                 if active_thread_id:
                     data.sort(key=lambda x: x['thread_id'] != active_thread_id)
                 return data

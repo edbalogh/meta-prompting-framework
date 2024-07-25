@@ -26,7 +26,7 @@ META_PROMPTER_INSTRUCTIONS = load_markdown_prompt("../prompts/meta-prompter.md")
 
 MAX_TURNS = 15  # Increased maximum number of turns for more complex queries
 
-def create_meta_prompting_agent(
+async def create_meta_prompting_agent(
     model: LanguageModelLike,
     tools: Sequence[BaseTool],
     checkpointer: MemorySaver = None,

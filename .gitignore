@@ -178,3 +178,4 @@ api/backend/activation-cloud-poc.code-workspace
 
 # static files for fastAPI
 api/static/
+.aider*
