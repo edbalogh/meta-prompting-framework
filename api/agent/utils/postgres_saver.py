@@ -109,6 +109,9 @@ class PostgresSaver(BaseCheckpointSaver):
         self.sync_connection = sync_connection
         self.async_connection = async_connection
 
+    async def _get_async_connection(self):
+        return self.async_connection
+
     @contextmanager
     def _get_sync_connection(self) -> Generator[psycopg.Connection, None, None]:
         """Get the connection to the Postgres database."""
@@ -519,3 +522,39 @@ class PostgresSaver(BaseCheckpointSaver):
 
         where_clause = "WHERE " + " AND ".join(wheres) if wheres else ""
         return where_clause, param_values
+    
+    async def get_or_create_run(self, run_id: str):
+        # Implement the logic to get or create a run
+        async with self.async_connection.cursor() as cursor:
+            await cursor.execute(
+                "SELECT * FROM runs WHERE run_id = %s",
+                (run_id,)
+            )
+            run = await cursor.fetchone()
+            if run is None:
+                await cursor.execute(
+                    "INSERT INTO runs (run_id) VALUES (%s) RETURNING *",
+                    (run_id,)
+                )
+                run = await cursor.fetchone()
+        return run
+
+    async def update_run(self, run_id: str, status: str, end_time: float):
+        # Implement the logic to update a run
+        async with self.async_connection.cursor() as cursor:
+            await cursor.execute(
+                "UPDATE runs SET status = %s, end_time = %s WHERE run_id = %s",
+                (status, end_time, run_id)
+            )
+
+    async def create_step(self, run_id: str, step_id: str, start_time: float, end_time: float, 
+                          inputs: dict, outputs: dict, step_type: str):
+        # Implement the logic to create a step
+        async with self.async_connection.cursor() as cursor:
+            await cursor.execute(
+                """
+                INSERT INTO steps (run_id, step_id, start_time, end_time, inputs, outputs, step_type)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (run_id, step_id, start_time, end_time, inputs, outputs, step_type)
+            )
