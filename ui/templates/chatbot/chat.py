@@ -2,9 +2,9 @@ from typing import Dict, List
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 from nicegui import ui
 import uuid, requests, os, re, httpx, asyncio
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI
+from langchain_core.runnables import RunnableSequence
 from templates.chatbot.log_callback_handler import NiceGuiLogElementCallbackHandler
 from langchain_core.messages.human import HumanMessage
 from langchain.callbacks.tracers import LangChainTracer
@@ -89,8 +89,8 @@ class ChatBot:
             input_variables=["question"],
             template="Generate a very short (max 5 words) name for a conversation that starts with this question: {question}"
         )
-        name_chain = LLMChain(llm=llm, prompt=prompt)
-        return name_chain.run(question).strip()
+        name_chain = RunnableSequence(prompt | llm)
+        return name_chain.invoke({"question": question}).strip()
 
     def save_conversation(self, name: str) -> None:
         conversation_data = {
@@ -166,8 +166,6 @@ class ChatBot:
                     ui.markdown(f"**Error:** An unexpected error occurred. Please try again or contact support if the issue persists.")
             finally:
                 self.message_container.remove(spinner)
-                if 'tracer' in locals():
-                    tracer.end_run(run_id)
 
     def create_ui(self):
         with ui.column().classes('col-span-6 justify-between h-full w-full'):
