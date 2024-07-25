@@ -3,29 +3,27 @@ from langserve import add_routes
 from endpoints import conversations
 from agent.chat_agent import build_agent
 from agent.utils.llm_setup import get_llm
-import asyncio
 
 app = FastAPI()
 
 # Mount all endpoint routers
 app.include_router(conversations.router)
 
-async def setup_agent():
-    return await build_agent(get_llm("openai", "gpt-4o-mini"))
+agent = None
 
-async def initialize():
+@app.on_event("startup")
+async def startup_event():
     global agent
-    agent = await setup_agent()
-
-# Run the initialization in an async context
-asyncio.run(initialize())
+    agent = await build_agent(get_llm("openai", "gpt-4o-mini"))
 
 # add langserve routes
-add_routes(
-    app=app,
-    runnable=agent.with_types(input_type=dict, output_type=dict),
-    path='/agents/meta-prompter'
-)
+@app.on_event("startup")
+async def setup_routes():
+    add_routes(
+        app=app,
+        runnable=agent.with_types(input_type=dict, output_type=dict),
+        path='/agents/meta-prompter'
+    )
 
 if __name__ == "__main__":
     import uvicorn
