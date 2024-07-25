@@ -127,9 +127,10 @@ class ChatBot:
             response = ''
             config = {"configurable": {"thread_id": self.thread_id}}
             payload = {"messages": [HumanMessage(content=question)], "turn_count": 0}
-            callbacks = [NiceGuiLogElementCallbackHandler(self.log)]
+            log_handler = NiceGuiLogElementCallbackHandler(self.log)
 
-            async for chunk in self.agent.astream(payload, config=config, callbacks=callbacks, stream_mode="values"):
+            async for chunk in self.agent.astream(payload, config=config, stream_mode="values"):
+                log_handler.on_llm_new_token(chunk)
                 node_response = next(iter(chunk.values()))
                 for bot_message in node_response['messages']:
                     # Format the chunk
