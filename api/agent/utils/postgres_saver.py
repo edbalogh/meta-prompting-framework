@@ -1,5 +1,6 @@
 """Implementation of a langgraph checkpoint saver using Postgres."""
 from contextlib import asynccontextmanager, contextmanager
+import time
 from typing import (
     Any,
     AsyncGenerator,
@@ -134,6 +135,25 @@ class PostgresSaver(BaseCheckpointSaver):
         checkpoint BYTEA NOT NULL,
         metadata BYTEA NOT NULL,
         PRIMARY KEY (thread_id, thread_ts)
+    );
+
+    CREATE TABLE IF NOT EXISTS runs (
+        run_id TEXT PRIMARY KEY,
+        status TEXT,
+        start_time BYTEA,
+        end_time BYTEA
+    );
+
+    CREATE TABLE IF NOT EXISTS steps (
+        run_id TEXT,
+        step_id TEXT,
+        start_time BYTEA,
+        end_time BYTEA,
+        inputs BYTEA,
+        outputs BYTEA,
+        step_type TEXT,
+        PRIMARY KEY (run_id, step_id),
+        FOREIGN KEY (run_id) REFERENCES runs(run_id)
     );
     """
 
@@ -524,37 +544,39 @@ class PostgresSaver(BaseCheckpointSaver):
         return where_clause, param_values
     
     async def get_or_create_run(self, run_id: str):
-        # Implement the logic to get or create a run
-        async with self.async_connection.cursor() as cursor:
-            await cursor.execute(
-                "SELECT * FROM runs WHERE run_id = %s",
-                (run_id,)
-            )
-            run = await cursor.fetchone()
-            if run is None:
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
                 await cursor.execute(
-                    "INSERT INTO runs (run_id) VALUES (%s) RETURNING *",
+                    "SELECT * FROM runs WHERE run_id = %s",
                     (run_id,)
                 )
                 run = await cursor.fetchone()
+                if run is None:
+                    await cursor.execute(
+                        "INSERT INTO runs (run_id, status, start_time) VALUES (%s, %s, %s) RETURNING *",
+                        (run_id, 'started', self.serde.dumps({"time": time.time()}))
+                    )
+                    run = await cursor.fetchone()
         return run
 
     async def update_run(self, run_id: str, status: str, end_time: float):
-        # Implement the logic to update a run
-        async with self.async_connection.cursor() as cursor:
-            await cursor.execute(
-                "UPDATE runs SET status = %s, end_time = %s WHERE run_id = %s",
-                (status, end_time, run_id)
-            )
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "UPDATE runs SET status = %s, end_time = %s WHERE run_id = %s",
+                    (status, self.serde.dumps({"time": end_time}), run_id)
+                )
 
     async def create_step(self, run_id: str, step_id: str, start_time: float, end_time: float, 
                           inputs: dict, outputs: dict, step_type: str):
-        # Implement the logic to create a step
-        async with self.async_connection.cursor() as cursor:
-            await cursor.execute(
-                """
-                INSERT INTO steps (run_id, step_id, start_time, end_time, inputs, outputs, step_type)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                (run_id, step_id, start_time, end_time, inputs, outputs, step_type)
-            )
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    INSERT INTO steps (run_id, step_id, start_time, end_time, inputs, outputs, step_type)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (run_id, step_id, self.serde.dumps({"time": start_time}), 
+                     self.serde.dumps({"time": end_time}), self.serde.dumps(inputs), 
+                     self.serde.dumps(outputs), step_type)
+                )
