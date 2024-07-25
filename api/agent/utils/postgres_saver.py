@@ -690,3 +690,11 @@ class PostgresSaver(BaseCheckpointSaver):
                     "UPDATE runs SET status = %s, end_time = %s, outputs = %s WHERE run_id = %s",
                     ('completed', self.serde.dumps({"time": time.time()}), self.serde.dumps(outputs), run_id)
                 )
+
+    async def complete_run(self, run_id: str, outputs: dict):
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "UPDATE runs SET status = %s, end_time = %s, outputs = %s WHERE run_id = %s",
+                    ('completed', self.serde.dumps({"time": time.time()}), self.serde.dumps(outputs), run_id)
+                )
