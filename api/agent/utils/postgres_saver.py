@@ -684,18 +684,29 @@ class PostgresSaver(BaseCheckpointSaver):
                 return None
 
     async def complete_run(self, run_id: str, outputs: dict):
+        end_time = time.time()
         async with self._get_async_connection() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
                     "UPDATE runs SET status = %s, end_time = %s, outputs = %s WHERE run_id = %s",
-                    ('completed', self.serde.dumps({"time": time.time()}), self.serde.dumps(outputs), run_id)
+                    ('completed', self.serde.dumps({"time": end_time}), self.serde.dumps(outputs), run_id)
                 )
+        await self.on_llm_end(run_id, outputs)
+
+    async def on_llm_start(self, run_id: str, **kwargs):
+        # Implement the logic to handle the start of an LLM run
+        await self.update_run(run_id, status="started", start_time=time.time())
 
     async def on_llm_end(self, run_id: str, response: Any):
         # This method was added in langgraph 0.1.7
         # Implement the logic to handle the end of an LLM run
         await self.update_run(run_id, status="completed", end_time=time.time())
         # You might want to store the response as well, depending on your needs
+
+    async def on_llm_error(self, run_id: str, error: Union[Exception, KeyboardInterrupt]):
+        # Implement the logic to handle errors in an LLM run
+        await self.update_run(run_id, status="error", end_time=time.time())
+        # You might want to store the error information as well
 
     async def complete_run(self, run_id: str, outputs: dict):
         async with self._get_async_connection() as conn:
