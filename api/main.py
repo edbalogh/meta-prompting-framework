@@ -3,13 +3,17 @@ from langserve import add_routes
 from endpoints import conversations
 from agent.chat_agent import build_agent
 from agent.utils.llm_setup import get_llm
+import asyncio
 
 app = FastAPI()
 
 # Mount all endpoint routers
 app.include_router(conversations.router)
 
-agent = build_agent(get_llm("openai", "gpt-4o-mini"))
+async def setup_agent():
+    return await build_agent(get_llm("openai", "gpt-4o-mini"))
+
+agent = asyncio.run(setup_agent())
 
 # add langserve routes
 add_routes(
