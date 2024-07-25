@@ -7,7 +7,6 @@ from langchain_openai import OpenAI
 from langchain_core.runnables import RunnableSequence
 from templates.chatbot.log_callback_handler import NiceGuiLogElementCallbackHandler
 from langchain_core.messages.human import HumanMessage
-from langchain.callbacks import LangChainTracer
 
 
 API_URL = os.environ['API_URL']
@@ -129,14 +128,9 @@ class ChatBot:
             config = {"configurable": {"thread_id": self.thread_id}}
             payload = {"messages": [HumanMessage(content=question)], "turn_count": 0}
             log_handler = NiceGuiLogElementCallbackHandler(self.log)
-            run_id = str(uuid.uuid4())  # Generate a unique run_id
-
             try:
-                tracer = LangChainTracer()
-                tracer.new_chain_run(run_id=run_id, inputs=payload)
-
-                async for chunk in self.agent.astream(payload, config=config, stream_mode="values", callbacks=[tracer]):
-                    log_handler.on_llm_new_token(token=chunk, run_id=run_id)
+                async for chunk in self.agent.astream(payload, config=config, stream_mode="values"):
+                    log_handler.on_llm_new_token(token=chunk, run_id=self.thread_id)
                     node_response = next(iter(chunk.values()))
                     for bot_message in node_response['messages']:
                         # Format the chunk
