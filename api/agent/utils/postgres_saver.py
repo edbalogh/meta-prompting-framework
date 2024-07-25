@@ -591,3 +591,55 @@ class PostgresSaver(BaseCheckpointSaver):
                      self.serde.dumps(outputs), step_type)
                 )
         return {"id": step_id}
+
+    async def get_run(self, run_id: str):
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT * FROM runs WHERE run_id = %s",
+                    (run_id,)
+                )
+                run = await cursor.fetchone()
+                if run:
+                    return {
+                        "id": run[0],
+                        "status": run[1],
+                        "start_time": self.serde.loads(run[2]) if run[2] else None,
+                        "end_time": self.serde.loads(run[3]) if run[3] else None
+                    }
+                return None
+
+    async def list_runs(self):
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("SELECT * FROM runs")
+                runs = await cursor.fetchall()
+                return [
+                    {
+                        "id": run[0],
+                        "status": run[1],
+                        "start_time": self.serde.loads(run[2]) if run[2] else None,
+                        "end_time": self.serde.loads(run[3]) if run[3] else None
+                    }
+                    for run in runs
+                ]
+
+    async def get_steps(self, run_id: str):
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT * FROM steps WHERE run_id = %s ORDER BY start_time",
+                    (run_id,)
+                )
+                steps = await cursor.fetchall()
+                return [
+                    {
+                        "id": step[1],
+                        "start_time": self.serde.loads(step[2])["time"] if step[2] else None,
+                        "end_time": self.serde.loads(step[3])["time"] if step[3] else None,
+                        "inputs": self.serde.loads(step[4]) if step[4] else None,
+                        "outputs": self.serde.loads(step[5]) if step[5] else None,
+                        "step_type": step[6]
+                    }
+                    for step in steps
+                ]
